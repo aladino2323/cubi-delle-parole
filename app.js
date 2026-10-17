@@ -471,6 +471,7 @@ function dimensiona() {
   const righe = gioco.libero ? 2 : 1;
   const perRiga = Math.ceil(nelVassoio / righe);
   let latoV = Math.min(lato, (largo * 0.96) / (perRiga * 1.18), alto * (gioco.libero ? 0.12 : 0.16));
+  if (gioco.trova) latoV = Math.min(alto * 0.24, (largo * 0.9) / (nelVassoio * 1.6), 190);
   latoV = Math.max(latoV, 28);
   document.documentElement.style.setProperty('--lato-vassoio', latoV.toFixed(0) + 'px');
 }
@@ -613,7 +614,15 @@ function esempioPer(l) {
 
 // ------------------------------------------------------------ la partita
 
-const gioco = { modo: 'copia', giro: [], indice: 0, parola: null, occupato: false, errori: new Map(), libero: false };
+const gioco = { modo: 'copia', giro: [], indice: 0, parola: null, occupato: false, errori: new Map(), libero: false, trova: false, lettera: null, sbagli: 0 };
+
+/** Prepara la schermata del gioco per uno dei tre giochi: parole, libero o trova. */
+function tipoDiGioco(tipo) {
+  gioco.libero = tipo === 'libero';
+  gioco.trova = tipo === 'trova';
+  $('#gioco').classList.toggle('libero', gioco.libero);
+  $('#gioco').classList.toggle('trova', gioco.trova);
+}
 
 function scegliParole() {
   const attive = stato.parole.filter((p) => p.attiva && p.testo.replace(/ /g, '').length > 0);
@@ -629,11 +638,10 @@ function scegliParole() {
 
 function iniziaGiro() {
   Suoni.sblocca();
-  gioco.libero = false;
+  tipoDiGioco('parole');
   gioco.modo = stato.impostazioni.livello === 'ascolta' ? 'ascolta' : 'copia';
   gioco.giro = scegliParole();
   gioco.indice = 0;
-  $('#gioco').classList.remove('libero');
   mostra('gioco');
   if (!gioco.giro.length) {
     Voce.di('Non ci sono parole. Chiedi alla mamma o al papà!');
@@ -734,7 +742,7 @@ async function festaParola() {
   disegnaStelle();
   await bravo();
   await aspetta(700);
-  if (stato.schermata !== 'gioco' || gioco.libero) return;
+  if (stato.schermata !== 'gioco' || gioco.libero || gioco.trova) return;
   if (gioco.indice >= gioco.giro.length) fineGiro();
   else preparaParola();
 }
@@ -775,12 +783,138 @@ async function fineGiro() {
   await Voce.di(nuova ? `Hai vinto una figurina: ${f.nome}!` : `Le hai tutte! Ecco ${f.nome}!`, { tono: 1.2 });
   ancora.onclick = () => {
     premio.classList.remove('aperto');
-    iniziaGiro();
+    if (gioco.trova) iniziaTrova();
+    else iniziaGiro();
   };
   aCasa.onclick = () => {
     premio.classList.remove('aperto');
     tornaACasa();
   };
+}
+
+// ------------------------------------------------------------ trova la lettera
+
+const DOMANDE_TROVA = 5;
+// lettere che a questa età si confondono facilmente: non si mettono mai insieme sul tavolo
+const SIMILI = ['MN', 'EF', 'OQC', 'PRB', 'BD', 'CG', 'IL', 'UV', 'AÀ'];
+const simili = (a, b) => SIMILI.some((g) => g.includes(a) && g.includes(b));
+
+/** Le lettere da cercare: quelle delle sue parole, con le vocali e le lettere del suo nome più spesso. */
+function lettereDaCercare(quante) {
+  const peso = new Map();
+  const aggiungi = (l, p) => {
+    if (ALFABETO.includes(l) && l !== 'À') peso.set(l, (peso.get(l) || 0) + p);
+  };
+  for (const p of stato.parole.filter((x) => x.attiva)) for (const l of p.testo.replace(/ /g, '')) aggiungi(l, p.famiglia ? 2 : 1);
+  for (const l of 'AEIOU') aggiungi(l, 4);
+  for (const l of pulisci(stato.impostazioni.nome).replace(/ /g, '')) aggiungi(l, 6);
+  const scelte = [];
+  while (scelte.length < quante) {
+    const possibili = [...peso.entries()].filter(([l]) => l !== scelte[scelte.length - 1] && !scelte.includes(l));
+    const tutte = possibili.length ? possibili : [...peso.entries()];
+    let r = Math.random() * tutte.reduce((s, [, p]) => s + p, 0);
+    const [l] = tutte.find(([, p]) => (r -= p) < 0) || tutte[0];
+    scelte.push(l);
+  }
+  return scelte;
+}
+
+function iniziaTrova() {
+  Suoni.sblocca();
+  tipoDiGioco('trova');
+  gioco.modo = stato.impostazioni.livello === 'ascolta' ? 'ascolta' : 'copia';
+  gioco.parola = null;
+  gioco.giro = lettereDaCercare(DOMANDE_TROVA);
+  gioco.indice = 0;
+  mostra('gioco');
+  preparaTrova();
+}
+
+/** La figura in alto: la lettera da cercare (livello Copia) oppure solo l'altoparlante (Ascolta). */
+function htmlLetteraDaCercare(l) {
+  if (gioco.modo === 'copia') {
+    return `<svg viewBox="0 0 200 200"><rect x="14" y="14" width="172" height="172" rx="34" fill="${colore(l)}"/><text x="100" y="150" font-size="140" font-weight="900" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif">${l}</text></svg>`;
+  }
+  const sfondo = stato.impostazioni.aiutoColori ? colore(l) : '#2fa84a';
+  return `<div class="leggi" style="background:${sfondo}">${ICONE.voce}</div>`;
+}
+
+function preparaTrova() {
+  const l = gioco.giro[gioco.indice];
+  gioco.lettera = l;
+  gioco.sbagli = 0;
+  gioco.occupato = false;
+  disegnaStelle();
+  const figura = $('#figura');
+  figura.innerHTML = htmlLetteraDaCercare(l);
+  figura.classList.remove('entra');
+  void figura.offsetWidth;
+  figura.classList.add('entra');
+  $('#caselle').innerHTML = '';
+  const altre = mescola(ALFABETO.filter((x) => x !== 'À' && x !== l && !simili(x, l)));
+  const scelte = [];
+  for (const x of altre) {
+    if (scelte.length >= 1 + stato.impostazioni.extra) break;
+    if (!scelte.some((y) => simili(x, y))) scelte.push(x);
+  }
+  const vassoio = $('#vassoio');
+  vassoio.innerHTML = '';
+  mescola([l, ...scelte]).forEach((x, i) => {
+    const c = nuovoCubo(x);
+    c.classList.add('galleggia');
+    c.style.animationDelay = (i * 0.45).toFixed(2) + 's';
+    c.addEventListener('click', () => sceltaTrova(c));
+    vassoio.appendChild(c);
+  });
+  dimensiona();
+  annunciaTrova();
+}
+
+async function annunciaTrova() {
+  Voce.zitto();
+  await aspetta(300);
+  await Voce.di(`Dov'è la ${nomeLettera(gioco.lettera)}?`, { velocita: 0.9 });
+}
+
+async function sceltaTrova(c) {
+  if (gioco.occupato || !gioco.trova) return;
+  Suoni.sblocca();
+  const l = c.dataset.lettera;
+  Voce.zitto();
+  if (l !== gioco.lettera) {
+    // il cubo "scuote la testa" e la voce dice quale lettera è
+    gioco.sbagli++;
+    c.classList.remove('sbagliato');
+    void c.offsetWidth;
+    c.classList.add('sbagliato');
+    setTimeout(() => c.classList.remove('sbagliato'), 500);
+    Suoni.boing();
+    if (gioco.sbagli >= 2) document.querySelectorAll('#vassoio .cubo').forEach((x) => x.classList.toggle('indizio', x.dataset.lettera === gioco.lettera));
+    await Voce.di(`Questa è la ${nomeLettera(l)}. Cerca la ${nomeLettera(gioco.lettera)}!`);
+    return;
+  }
+  gioco.occupato = true;
+  c.classList.remove('galleggia', 'indizio');
+  c.classList.add('giusto');
+  document.querySelectorAll('#vassoio .cubo').forEach((x) => x !== c && x.classList.add('spento'));
+  Suoni.pop();
+  Suoni.ding(7);
+  scintille(c);
+  const esempio = esempioPer(l);
+  await Voce.di(`Sì! È la ${nomeLettera(l)}${esempio ? ', come ' + esempio : ''}!`, { tono: 1.2 });
+  gioco.indice++;
+  disegnaStelle();
+  if (gioco.indice >= gioco.giro.length) {
+    Suoni.applauso();
+    coriandoli(160);
+    await bravo();
+    await aspetta(400);
+    if (stato.schermata === 'gioco' && gioco.trova) fineGiro();
+  } else {
+    coriandoli(40);
+    await aspetta(500);
+    if (stato.schermata === 'gioco' && gioco.trova) preparaTrova();
+  }
 }
 
 // ------------------------------------------------------------ il gioco libero
@@ -789,10 +923,9 @@ const CASELLE_LIBERE = 8;
 
 function iniziaLibero() {
   Suoni.sblocca();
-  gioco.libero = true;
+  tipoDiGioco('libero');
   gioco.occupato = false;
   gioco.parola = null;
-  $('#gioco').classList.add('libero');
   mostra('gioco');
   disegnaStelle();
   const figura = $('#figura');
@@ -1442,7 +1575,7 @@ function preparaIngranaggio() {
 
 // ------------------------------------------------------------ avvio
 
-const VERSIONE = '1.0.1';
+const VERSIONE = '1.1.0';
 
 function collega() {
   $('#gioca').innerHTML = ICONE.gioca;
@@ -1461,22 +1594,22 @@ function collega() {
   $('#apri-album').onclick = apriAlbum;
   $('#esci').onclick = () => history.back();
   $('#esci-album').onclick = () => history.back();
-  $('#ripeti').onclick = () => {
+  const ripeti = () => {
     Suoni.sblocca();
     if (gioco.libero) return leggiLibero();
+    if (gioco.trova) {
+      if (!gioco.occupato) annunciaTrova();
+      return;
+    }
     if (gioco.parola && !gioco.occupato) {
       Voce.zitto();
       Voce.parola(gioco.parola);
     }
   };
-  $('#figura').onclick = () => {
-    Suoni.sblocca();
-    if (gioco.libero) return leggiLibero();
-    if (gioco.parola && !gioco.occupato) {
-      Voce.zitto();
-      Voce.parola(gioco.parola);
-    }
-  };
+  $('#ripeti').onclick = ripeti;
+  $('#figura').onclick = ripeti;
+  $('#trova').innerHTML = ICONE.trova;
+  $('#trova').onclick = iniziaTrova;
   $('#leggi').onclick = leggiLibero;
   $('#cancella').onclick = cancellaLibero;
   $('#schermo').onclick = () => {
@@ -1499,7 +1632,11 @@ function collega() {
 /** Modalità di prova per controllare la grafica: index.html#prova=gioco (oppure libero, album, premio, genitori). */
 async function provaScena(nome) {
   Voce.disponibile = false;
-  if (nome === 'gioco' || nome === 'premio') {
+  if (nome === 'trova') {
+    iniziaTrova();
+    gioco.indice = 2;
+    disegnaStelle();
+  } else if (nome === 'gioco' || nome === 'premio') {
     iniziaGiro();
     const caselle = [...document.querySelectorAll('#caselle .casella')].slice(0, 2);
     for (const s of caselle) {

@@ -214,6 +214,10 @@ button svg {
   background: #ff9f43;
 }
 
+.azzurro {
+  background: #1fa2d6;
+}
+
 .album {
   background: #a66bff;
 }
@@ -463,6 +467,63 @@ button:active {
 
 #gioco.libero .tasto-icona.voce {
   visibility: hidden;
+}
+
+/* trova la lettera: niente caselle, pochi cubi grandi che saltellano sul tavolo */
+#gioco.trova .caselle {
+  display: none;
+}
+
+#gioco.trova .vassoio {
+  gap: calc(var(--lato-vassoio) * 0.45);
+}
+
+#gioco.trova .cubo {
+  cursor: pointer;
+}
+
+.cubo.galleggia {
+  animation: galleggia 2.6s ease-in-out infinite;
+}
+
+@keyframes galleggia {
+  50% {
+    translate: 0 -10%;
+  }
+}
+
+.cubo.giusto {
+  z-index: 5;
+  animation: festa 0.7s ease-in-out 2;
+  box-shadow: 0 0 0 calc(var(--lato-vassoio) * 0.06) #fff, 0 0 calc(var(--lato-vassoio) * 0.6) #ffe066;
+}
+
+.cubo.sbagliato {
+  animation: scuoti 0.45s ease-in-out;
+}
+
+@keyframes scuoti {
+  20% {
+    translate: -9% 0;
+  }
+  40% {
+    translate: 9% 0;
+  }
+  60% {
+    translate: -6% 0;
+  }
+  80% {
+    translate: 6% 0;
+  }
+}
+
+.cubo.indizio {
+  box-shadow: 0 0 0 calc(var(--lato-vassoio) * 0.06) #fff, 0 0 calc(var(--lato-vassoio) * 0.6) #ffe066;
+}
+
+.cubo.spento {
+  opacity: 0.35;
+  transition: opacity 0.3s;
 }
 
 /* ------------------------------------------------------------ il vassoio di legno e i cubi */
