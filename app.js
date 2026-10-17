@@ -1310,6 +1310,7 @@ function disegnaGenitori() {
   };
   s5.appendChild(azzera);
   s5.appendChild(crea('p', 'nota', `Le foto, le voci registrate e le parole aggiunte restano solo su questo dispositivo: non vengono mandate su internet. Versione ${VERSIONE}.`));
+  s5.appendChild(crea('p', 'nota copyright-genitori', '© 2026 GML – Tutti i diritti riservati.'));
   g.appendChild(s5);
   g.scrollTop = scorri;
 }
@@ -1441,7 +1442,7 @@ function preparaIngranaggio() {
 
 // ------------------------------------------------------------ avvio
 
-const VERSIONE = '1.0.0';
+const VERSIONE = '1.0.1';
 
 function collega() {
   $('#gioca').innerHTML = ICONE.gioca;

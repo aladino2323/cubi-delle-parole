@@ -276,6 +276,16 @@ button:active {
   background: rgba(255, 255, 255, 0.3);
 }
 
+.copyright {
+  position: absolute;
+  right: 2.4vmin;
+  bottom: 2.4vmin;
+  margin: 0;
+  font-size: clamp(11px, 1.8vmin, 15px);
+  font-weight: 700;
+  color: rgba(43, 36, 51, 0.55);
+}
+
 .nota-genitori {
   position: absolute;
   left: 13vmin;

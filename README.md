@@ -17,3 +17,7 @@ Sul tablet Android: aprire il link con Chrome, poi dal menu (i tre puntini) sceg
 
 Grafica, suoni e disegni sono creati interamente dal codice (HTML, CSS, JavaScript, SVG),
 senza librerie esterne.
+
+---
+
+© 2026 GML — Tutti i diritti riservati. Vedi il file [LICENSE](LICENSE).
