@@ -430,6 +430,14 @@ button:active {
   opacity: 0.4;
 }
 
+.casella.tocco {
+  animation: chiama 0.4s ease-in-out;
+}
+
+.casella {
+  cursor: pointer;
+}
+
 .casella.aiuto {
   animation: chiama 0.9s ease-in-out 3;
 }

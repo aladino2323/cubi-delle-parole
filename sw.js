@@ -1,7 +1,7 @@
 // Fa funzionare il gioco anche senza internet: la prima volta salva tutti i file sul dispositivo.
 'use strict';
 
-const NOME = 'cubi-delle-parole-v3';
+const NOME = 'cubi-delle-parole-v4';
 const FILE = ['./', 'index.html', 'stile.css', 'disegni.js', 'app.js', 'manifest.webmanifest', 'icone/icona-192.png', 'icone/icona-512.png', 'icone/icona-maskable-512.png'];
 
 self.addEventListener('install', (e) => {

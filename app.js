@@ -517,10 +517,13 @@ window.addEventListener(
   { passive: false },
 );
 
+let ultimoRilascio = 0;
+
 function finisciTrascina(e) {
   if (!trascina || e.pointerId !== trascina.id) return;
   const t = trascina;
   trascina = null;
+  ultimoRilascio = performance.now();
   if (gioco.libero) rilasciaLibero(t, e.clientX, e.clientY);
   else rilascia(t, e.clientX, e.clientY);
 }
@@ -568,10 +571,30 @@ function metti(el, casella) {
     posto.replaceWith(vuoto);
   }
   casella.appendChild(el);
+  // nelle parole il cubo messo resta al suo posto (nel gioco libero si può spostare)
+  if (!gioco.libero) el.classList.add('fermo');
   el.classList.add('appena');
   setTimeout(() => el.classList.remove('appena'), 400);
   Suoni.pop();
   scintille(casella);
+}
+
+/** Toccando una casella (vuota o con il suo cubo) la voce dice la lettera; toccandola di nuovo aggiunge un esempio. */
+let ultimaCasella = { el: null, quando: 0 };
+function toccaCasella(e) {
+  const s = e.target.closest('.casella');
+  if (!s || !s.dataset.lettera || gioco.libero || gioco.trova || gioco.occupato || trascina) return;
+  if (performance.now() - ultimoRilascio < 400) return;
+  Suoni.sblocca();
+  const l = s.dataset.lettera;
+  s.classList.remove('tocco');
+  void s.offsetWidth;
+  s.classList.add('tocco');
+  const ancora = ultimaCasella.el === s && performance.now() - ultimaCasella.quando < 3000;
+  ultimaCasella = { el: s, quando: performance.now() };
+  const esempio = esempioPer(l);
+  Voce.zitto();
+  Voce.di(ancora && esempio ? `${nomeLettera(l)}, come ${esempio}` : nomeLettera(l), { velocita: 0.9 });
 }
 
 /** Copia e Ascolta: il cubo giusto va al suo posto (come una calamita), quello sbagliato torna indietro. */
@@ -1575,7 +1598,7 @@ function preparaIngranaggio() {
 
 // ------------------------------------------------------------ avvio
 
-const VERSIONE = '1.1.0';
+const VERSIONE = '1.1.1';
 
 function collega() {
   $('#gioca').innerHTML = ICONE.gioca;
@@ -1612,6 +1635,7 @@ function collega() {
   $('#trova').onclick = iniziaTrova;
   $('#leggi').onclick = leggiLibero;
   $('#cancella').onclick = cancellaLibero;
+  $('#caselle').addEventListener('click', toccaCasella);
   $('#schermo').onclick = () => {
     if (document.fullscreenElement) document.exitFullscreen();
     else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
