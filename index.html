@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#4cb3f0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Un gioco per imparare le lettere costruendo parole con i cubi.">
+<title>I Cubi delle Parole</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone/icona-192.png">
+<link rel="apple-touch-icon" href="icone/icona-192.png">
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div id="cielo" aria-hidden="true"><span class="nuvola n1"></span><span class="nuvola n2"></span><span class="nuvola n3"></span></div>
+
+<main id="app">
+  <!-- la schermata iniziale -->
+  <section id="home" class="schermata attiva">
+    <h1 id="titolo" aria-label="Titolo"></h1>
+    <div class="pulsanti-home">
+      <button id="gioca" class="tasto-grande gioca" aria-label="Gioca"></button>
+      <div class="pulsanti-piccoli">
+        <button id="libero" class="tasto-medio arancio" aria-label="Gioco libero"></button>
+        <button id="apri-album" class="tasto-medio album" aria-label="Le figurine"></button>
+      </div>
+    </div>
+    <button id="ingranaggio" class="ingranaggio" aria-label="Angolo dei genitori: tenere premuto"></button>
+    <button id="schermo" class="tasto-angolo" aria-label="Schermo intero"></button>
+    <p class="nota-genitori">Genitori: tenete premuto l'ingranaggio per 3 secondi</p>
+  </section>
+
+  <!-- il gioco -->
+  <section id="gioco" class="schermata">
+    <header class="barra">
+      <button id="esci" class="tasto-icona casa" aria-label="Torna a casa"></button>
+      <div id="stelle"></div>
+      <button id="ripeti" class="tasto-icona voce" aria-label="Ripeti la parola"></button>
+    </header>
+    <div class="zona-figura"><button id="figura" class="figura" aria-label="Senti la parola"></button></div>
+    <div id="caselle" class="caselle"></div>
+    <div class="comandi-libero">
+      <button id="leggi" class="tasto-medio leggi-tasto" aria-label="Leggi"></button>
+      <button id="cancella" class="tasto-medio cancella" aria-label="Cancella"></button>
+    </div>
+    <div id="vassoio" class="vassoio"></div>
+  </section>
+
+  <!-- l'album delle figurine -->
+  <section id="album" class="schermata">
+    <header class="barra">
+      <button id="esci-album" class="tasto-icona casa" aria-label="Torna a casa"></button>
+      <h2 class="titolo-album">Le figurine</h2>
+      <span class="tasto-icona vuoto-barra"></span>
+    </header>
+    <div id="figurine" class="figurine"></div>
+  </section>
+
+  <!-- l'angolo dei genitori -->
+  <section id="genitori" class="schermata"></section>
+</main>
+
+<div id="premio" class="premio"></div>
+<div id="dialogo" class="dialogo"></div>
+<canvas id="coriandoli" aria-hidden="true"></canvas>
+
+<script src="disegni.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
